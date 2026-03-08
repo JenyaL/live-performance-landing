@@ -67,7 +67,32 @@ npm run build
 - artistName
 - heroTitle
 - heroSubtitle
+- heroImageUrl
+- heroImagePositionX
+- heroImagePositionY
 - navItems[]
 - tracks[]
 - gallery[]
 - contacts
+
+## Deploy на Firebase Hosting через GitHub Actions
+
+Workflow: `.github/workflows/firebase-hosting-deploy.yml`
+
+Деплой запускается:
+- при `push` в ветку `main_git`
+- вручную через `workflow_dispatch`
+
+Нужно добавить в GitHub Secrets:
+
+- `FIREBASE_SERVICE_ACCOUNT_MY_DIGITAL_PROFILE_E9F92`
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
+- `VITE_CLOUDINARY_CLOUD_NAME`
+- `VITE_CLOUDINARY_UPLOAD_PRESET`
+
+Firebase проект задан в `.firebaserc` как `my-digital-profile-e9f92`.
