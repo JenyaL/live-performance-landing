@@ -38,17 +38,17 @@ export type LandingContent = {
 
 export const defaultLandingContent: LandingContent = {
   artistName: "Live Performance",
-  heroTitle: "Живой звук. Энергия сцены.",
+  heroTitle: "Live sound. Stage energy.",
   heroSubtitle:
-    "Музыкант для фестивалей, частных событий и клубных концертов. Слушайте треки, смотрите фото и бронируйте выступление.",
+    "Musician for festivals, private events, and club shows. Listen to tracks, browse photos, and book a live performance.",
   heroImageUrl: "",
   heroImagePositionX: 50,
   heroImagePositionY: 50,
   navItems: [
-    { id: crypto.randomUUID(), label: "Главная", href: "#hero" },
-    { id: crypto.randomUUID(), label: "Музыка", href: "#music" },
-    { id: crypto.randomUUID(), label: "Галерея", href: "#gallery" },
-    { id: crypto.randomUUID(), label: "Контакты", href: "#contacts" },
+    { id: crypto.randomUUID(), label: "Home", href: "#hero" },
+    { id: crypto.randomUUID(), label: "Music", href: "#music" },
+    { id: crypto.randomUUID(), label: "Gallery", href: "#gallery" },
+    { id: crypto.randomUUID(), label: "Contacts", href: "#contacts" },
   ],
   tracks: [
     {
@@ -62,6 +62,6 @@ export const defaultLandingContent: LandingContent = {
   contacts: {
     email: "artist@email.com",
     phone: "+1 (000) 000-00-00",
-    copyright: "© 2026 Live Performance. Все права защищены.",
+    copyright: "© 2026 Live Performance. All rights reserved.",
   },
 };

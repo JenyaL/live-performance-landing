@@ -332,6 +332,14 @@ a {
   margin: 16px 0 0;
 }
 
+.landing-hero__artist {
+  margin: 0;
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(19px, 2.1vw, 24px);
+  line-height: 1.2;
+  color: rgba(244, 225, 166, 0.9);
+}
+
 .landing-hero__actions {
   display: flex;
   gap: 10px;

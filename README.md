@@ -1,39 +1,39 @@
 # Live Performance Landing
 
-Лендинг для музыканта + админка для управления контентом.
+A musician landing page with an admin panel for content management.
 
-## Что внутри
+## What's Included
 
-- Лендинг:
-  - Header с навигацией
-  - Hero блок
-  - Блок с музыкой (YouTube превью)
-  - Блок с фото-галереей
-  - Footer с контактами и копирайтом
-- Админка (`/admin`):
-  - Редактирование hero-контента
-  - Управление треками (YouTube ссылки)
-  - Загрузка фото в Cloudinary
-  - Редактирование контактов
+- Landing page:
+  - Header with navigation
+  - Hero section
+  - Music section (YouTube previews)
+  - Photo gallery section
+  - Footer with contacts and copyright
+- Admin panel (`/admin`):
+  - Hero content editing
+  - Track management (YouTube links)
+  - Photo uploads to Cloudinary
+  - Contact data editing
 
-## Технологии
+## Tech Stack
 
 - React + TypeScript + Vite
 - React Router
-- Firebase Firestore (контент)
-- Cloudinary (изображения)
+- Firebase Firestore (content)
+- Cloudinary (images)
 
-## Настройка
+## Setup
 
-1. Установить зависимости:
+1. Install dependencies:
 
 ```bash
 npm install
 ```
 
-2. Создать файл `.env` на основе `.env.example`.
+2. Create a `.env` file based on `.env.example`.
 
-3. Заполнить переменные Firebase и Cloudinary:
+3. Fill in Firebase and Cloudinary variables:
 
 ```env
 VITE_FIREBASE_API_KEY=
@@ -47,7 +47,7 @@ VITE_CLOUDINARY_CLOUD_NAME=
 VITE_CLOUDINARY_UPLOAD_PRESET=
 ```
 
-4. Запуск разработки:
+4. Start development server:
 
 ```bash
 npm run dev
@@ -59,11 +59,11 @@ npm run dev
 npm run build
 ```
 
-## Структура данных Firestore
+## Firestore Data Structure
 
-Документ: `landing/main`
+Document: `landing/main`
 
-Содержит:
+Includes:
 - artistName
 - heroTitle
 - heroSubtitle
@@ -75,15 +75,27 @@ npm run build
 - gallery[]
 - contacts
 
-## Deploy на Firebase Hosting через GitHub Actions
+Additional collections used for admin security and auditing:
+- `admin_users/{uid}`: admin allowlist entry. Create documents manually in Firestore for users who can access `/admin` and save changes.
+- `admin_logs/{autoId}`: immutable audit log entries created on each save from admin panel.
+
+Audit log document fields:
+- `createdAt` (server timestamp)
+- `actorEmail`
+- `actorUid`
+- `action` (`save_landing_content`)
+- `targetPath` (`landing/main`)
+- `savedSummary` (what was saved: artist, hero text, counts, contacts)
+
+## Deploy to Firebase Hosting via GitHub Actions
 
 Workflow: `.github/workflows/firebase-hosting-deploy.yml`
 
-Деплой запускается:
-- при `push` в ветку `main_git`
-- вручную через `workflow_dispatch`
+Deployment runs:
+- on `push` to branch `main_git`
+- manually via `workflow_dispatch`
 
-Нужно добавить в GitHub Secrets:
+Required GitHub Secrets:
 
 - `FIREBASE_SERVICE_ACCOUNT_MY_DIGITAL_PROFILE_E9F92`
 - `VITE_FIREBASE_API_KEY`
@@ -95,4 +107,4 @@ Workflow: `.github/workflows/firebase-hosting-deploy.yml`
 - `VITE_CLOUDINARY_CLOUD_NAME`
 - `VITE_CLOUDINARY_UPLOAD_PRESET`
 
-Firebase проект задан в `.firebaserc` как `my-digital-profile-e9f92`.
+The Firebase project is set in `.firebaserc` as `my-digital-profile-e9f92`.
