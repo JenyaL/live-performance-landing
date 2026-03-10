@@ -1,10 +1,18 @@
 import { useEffect, useRef, useState } from "react";
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User } from "firebase/auth";
 import { getLandingContent, saveLandingContent } from "../lib/content";
 import { uploadImageToCloudinary } from "../lib/cloudinary";
+import { auth, isFirebaseConfigured } from "../lib/firebase";
 import { extractYoutubeVideoId } from "../lib/youtube";
 import type { LandingContent } from "../types/content";
 
 export function AdminPage() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [isAuthSubmitting, setIsAuthSubmitting] = useState(false);
   const [content, setContent] = useState<LandingContent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [status, setStatus] = useState("");
@@ -13,7 +21,30 @@ export function AdminPage() {
   const heroImageEditorRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (!auth) {
+      setIsAuthLoading(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setIsAuthLoading(false);
+      if (!user) {
+        setContent(null);
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setIsLoading(false);
+      return;
+    }
+
     const load = async () => {
+      setIsLoading(true);
       try {
         const nextContent = await getLandingContent();
         setContent(nextContent);
@@ -23,7 +54,30 @@ export function AdminPage() {
     };
 
     void load();
-  }, []);
+  }, [currentUser]);
+
+  const handleSignIn = async () => {
+    if (!auth) {
+      setAuthError("Firebase Auth не настроен.");
+      return;
+    }
+
+    setIsAuthSubmitting(true);
+    setAuthError("");
+
+    try {
+      await signInWithEmailAndPassword(auth, authEmail.trim(), authPassword);
+    } catch {
+      setAuthError("Не удалось войти. Проверьте email и пароль.");
+    } finally {
+      setIsAuthSubmitting(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    if (!auth) return;
+    await signOut(auth);
+  };
 
   const updateHero = (
     key: "artistName" | "heroTitle" | "heroSubtitle" | "heroImageUrl" | "heroImagePositionX" | "heroImagePositionY",
@@ -157,12 +211,59 @@ export function AdminPage() {
     }
   };
 
+  if (!isFirebaseConfigured) {
+    return <main className="shell error">Firebase не настроен. Проверьте VITE_FIREBASE_* переменные.</main>;
+  }
+
+  if (isAuthLoading) return <main className="shell">Проверяем авторизацию...</main>;
+
+  if (!currentUser) {
+    return (
+      <main className="shell admin-auth-page">
+        <section className="admin-auth-card">
+          <h1>Вход в админку</h1>
+          <p>Доступ только для авторизованного пользователя Firebase Auth.</p>
+
+          <label>
+            Email
+            <input value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} type="email" />
+          </label>
+
+          <label>
+            Пароль
+            <input
+              value={authPassword}
+              onChange={(event) => setAuthPassword(event.target.value)}
+              type="password"
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  void handleSignIn();
+                }
+              }}
+            />
+          </label>
+
+          <button type="button" className="save-btn" onClick={() => void handleSignIn()} disabled={isAuthSubmitting}>
+            {isAuthSubmitting ? "Входим..." : "Войти"}
+          </button>
+
+          {authError && <p className="error">{authError}</p>}
+        </section>
+      </main>
+    );
+  }
+
   if (isLoading) return <main className="shell">Загрузка админки...</main>;
   if (!content) return <main className="shell error">Не удалось загрузить данные</main>;
 
   return (
     <main className="shell admin-page">
-      <h1>Админка</h1>
+      <div className="admin-header-row">
+        <h1>Админка</h1>
+        <button type="button" className="ghost" onClick={() => void handleSignOut()}>
+          Выйти
+        </button>
+      </div>
       <p className="admin-note">Изменения влияют на контент лендинга.</p>
 
       <section className="admin-section">

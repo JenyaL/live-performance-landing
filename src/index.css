@@ -805,8 +805,43 @@ a {
   color: #21140f;
 }
 
+.admin-auth-page {
+  min-height: 70vh;
+  display: grid;
+  place-items: center;
+  padding: 24px 0;
+}
+
+.admin-auth-card {
+  width: min(460px, 92vw);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+  padding: 20px;
+  color: #21140f;
+  display: grid;
+  gap: 12px;
+}
+
+.admin-auth-card h1 {
+  margin: 0;
+}
+
+.admin-auth-card p {
+  margin: 0;
+  color: #4a4a4a;
+}
+
+.admin-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .admin-page h1 {
   font-family: "Space Grotesk", sans-serif;
+  margin: 0;
 }
 
 .admin-note {
