@@ -20,6 +20,14 @@ export function LandingPage() {
     void load();
   }, []);
 
+  const heroTitle = content?.heroTitle ?? "Live sound. Stage energy.";
+  const artistName = content?.artistName ?? "Live Performance";
+  const heroSubtitle = content?.heroSubtitle ?? "";
+  const heroImageUrl = content?.heroImageUrl ?? "";
+  const heroImagePosition = content
+    ? `${content.heroImagePositionX}% ${content.heroImagePositionY}%`
+    : "50% 50%";
+
   return (
     <div className="site-bg" style={logoBlendStyle}>
       <div className="bg" aria-hidden="true">
@@ -44,11 +52,11 @@ export function LandingPage() {
       <main className="shell landing-page">
         <section id="hero" className="landing-block landing-hero">
           <div className="landing-hero__layout">
-            <h1 className="landing-hero__title">{content?.heroTitle ?? "Live sound. Stage energy."}</h1>
+            <h1 className="landing-hero__title">{heroTitle}</h1>
 
             <div className="landing-hero__content">
-              <p className="landing-hero__artist">{content?.artistName ?? "Live Performance"}</p>
-              <p className="landing-hero__subtitle">{content?.heroSubtitle ?? ""}</p>
+              <p className="landing-hero__artist">{artistName}</p>
+              <p className="landing-hero__subtitle">{heroSubtitle}</p>
 
               <div className="landing-hero__actions">
                 <a href="#music">Listen to tracks</a>
@@ -56,13 +64,8 @@ export function LandingPage() {
             </div>
 
             <aside className="landing-hero__photo-slot" aria-label="Photo in hero section">
-              {content?.heroImageUrl ? (
-                <img
-                  src={content.heroImageUrl}
-                  alt="Hero"
-                  className="landing-hero__photo"
-                  style={{ objectPosition: `${content.heroImagePositionX}% ${content.heroImagePositionY}%` }}
-                />
+              {heroImageUrl ? (
+                <img src={heroImageUrl} alt="Hero" className="landing-hero__photo" style={{ objectPosition: heroImagePosition }} />
               ) : (
                 <div className="landing-hero__photo-placeholder">Hero photo will appear here from admin</div>
               )}
