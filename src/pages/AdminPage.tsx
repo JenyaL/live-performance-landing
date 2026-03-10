@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User } from "firebase/auth";
-import { getLandingContent, saveLandingContent } from "../lib/content";
+import { getLandingContent, isAdminUser, saveLandingContent } from "../lib/content";
 import { uploadImageToCloudinary } from "../lib/cloudinary";
 import { auth, isFirebaseConfigured } from "../lib/firebase";
 import { extractYoutubeVideoId } from "../lib/youtube";
@@ -45,7 +45,17 @@ export function AdminPage() {
 
     const load = async () => {
       setIsLoading(true);
+      setAuthError("");
       try {
+        const allowed = await isAdminUser(currentUser.uid);
+        if (!allowed) {
+          setAuthError("Access denied: your account is not in the admin allowlist.");
+          if (auth) {
+            await signOut(auth);
+          }
+          return;
+        }
+
         const nextContent = await getLandingContent();
         setContent(nextContent);
       } finally {
@@ -58,7 +68,7 @@ export function AdminPage() {
 
   const handleSignIn = async () => {
     if (!auth) {
-      setAuthError("Firebase Auth не настроен.");
+      setAuthError("Firebase Auth is not configured.");
       return;
     }
 
@@ -68,7 +78,7 @@ export function AdminPage() {
     try {
       await signInWithEmailAndPassword(auth, authEmail.trim(), authPassword);
     } catch {
-      setAuthError("Не удалось войти. Проверьте email и пароль.");
+      setAuthError("Sign-in failed. Check your email and password.");
     } finally {
       setIsAuthSubmitting(false);
     }
@@ -108,16 +118,16 @@ export function AdminPage() {
   const uploadHeroImage = async (file: File) => {
     if (!content) return;
 
-    setStatus("Загружаем hero-фото в Cloudinary...");
+    setStatus("Uploading hero photo to Cloudinary...");
     try {
       const imageUrl = await uploadImageToCloudinary(file);
       setContent({
         ...content,
         heroImageUrl: imageUrl,
       });
-      setStatus("Hero-фото добавлено");
+      setStatus("Hero photo uploaded");
     } catch {
-      setStatus("Ошибка загрузки hero-фото");
+      setStatus("Failed to upload hero photo");
     }
   };
 
@@ -154,7 +164,7 @@ export function AdminPage() {
         ...content.tracks,
         {
           id: crypto.randomUUID(),
-          title: "Новый трек",
+          title: "New track",
           youtubeUrl: "",
           videoId: "",
         },
@@ -175,7 +185,7 @@ export function AdminPage() {
   const uploadImage = async (file: File) => {
     if (!content) return;
 
-    setStatus("Загружаем фото в Cloudinary...");
+    setStatus("Uploading photo to Cloudinary...");
     try {
       const imageUrl = await uploadImageToCloudinary(file);
       setContent({
@@ -189,40 +199,43 @@ export function AdminPage() {
           },
         ],
       });
-      setStatus("Фото добавлено");
+      setStatus("Photo uploaded");
     } catch {
-      setStatus("Ошибка загрузки фото");
+      setStatus("Failed to upload photo");
     }
   };
 
   const save = async () => {
-    if (!content) return;
+    if (!content || !currentUser) return;
 
     setIsSaving(true);
-    setStatus("Сохраняем изменения...");
+    setStatus("Saving changes...");
 
     try {
-      await saveLandingContent(content);
-      setStatus("Сохранено");
+      await saveLandingContent(content, {
+        uid: currentUser.uid,
+        email: currentUser.email ?? "",
+      });
+      setStatus("Saved");
     } catch {
-      setStatus("Ошибка сохранения");
+      setStatus("Failed to save");
     } finally {
       setIsSaving(false);
     }
   };
 
   if (!isFirebaseConfigured) {
-    return <main className="shell error">Firebase не настроен. Проверьте VITE_FIREBASE_* переменные.</main>;
+    return <main className="shell error">Firebase is not configured. Check VITE_FIREBASE_* variables.</main>;
   }
 
-  if (isAuthLoading) return <main className="shell">Проверяем авторизацию...</main>;
+  if (isAuthLoading) return <main className="shell">Checking authentication...</main>;
 
   if (!currentUser) {
     return (
       <main className="shell admin-auth-page">
         <section className="admin-auth-card">
-          <h1>Вход в админку</h1>
-          <p>Доступ только для авторизованного пользователя Firebase Auth.</p>
+          <h1>Admin sign in</h1>
+          <p>Access is restricted to authenticated Firebase Auth users.</p>
 
           <label>
             Email
@@ -230,7 +243,7 @@ export function AdminPage() {
           </label>
 
           <label>
-            Пароль
+            Password
             <input
               value={authPassword}
               onChange={(event) => setAuthPassword(event.target.value)}
@@ -244,7 +257,7 @@ export function AdminPage() {
           </label>
 
           <button type="button" className="save-btn" onClick={() => void handleSignIn()} disabled={isAuthSubmitting}>
-            {isAuthSubmitting ? "Входим..." : "Войти"}
+            {isAuthSubmitting ? "Signing in..." : "Sign in"}
           </button>
 
           {authError && <p className="error">{authError}</p>}
@@ -253,31 +266,31 @@ export function AdminPage() {
     );
   }
 
-  if (isLoading) return <main className="shell">Загрузка админки...</main>;
-  if (!content) return <main className="shell error">Не удалось загрузить данные</main>;
+  if (isLoading) return <main className="shell">Loading admin panel...</main>;
+  if (!content) return <main className="shell error">Failed to load data</main>;
 
   return (
     <main className="shell admin-page">
       <div className="admin-header-row">
-        <h1>Админка</h1>
+        <h1>Admin panel</h1>
         <button type="button" className="ghost" onClick={() => void handleSignOut()}>
-          Выйти
+          Sign out
         </button>
       </div>
-      <p className="admin-note">Изменения влияют на контент лендинга.</p>
+      <p className="admin-note">Changes here update the landing page content.</p>
 
       <section className="admin-section">
         <h2>Hero</h2>
         <label>
-          Имя артиста
+          Artist name
           <input value={content.artistName} onChange={(event) => updateHero("artistName", event.target.value)} />
         </label>
         <label>
-          Заголовок
+          Title
           <input value={content.heroTitle} onChange={(event) => updateHero("heroTitle", event.target.value)} />
         </label>
         <label>
-          Подзаголовок
+          Subtitle
           <textarea
             value={content.heroSubtitle}
             onChange={(event) => updateHero("heroSubtitle", event.target.value)}
@@ -285,7 +298,7 @@ export function AdminPage() {
         </label>
 
         <label className="upload-box">
-          Загрузить фото для Hero
+          Upload hero photo
           <input
             type="file"
             accept="image/*"
@@ -300,7 +313,7 @@ export function AdminPage() {
 
         <div className="hero-photo-admin-controls">
           <label>
-            Позиция X: {content.heroImagePositionX.toFixed(1)}%
+            Position X: {content.heroImagePositionX.toFixed(1)}%
             <input
               type="range"
               min={0}
@@ -312,7 +325,7 @@ export function AdminPage() {
           </label>
 
           <label>
-            Позиция Y: {content.heroImagePositionY.toFixed(1)}%
+            Position Y: {content.heroImagePositionY.toFixed(1)}%
             <input
               type="range"
               min={0}
@@ -348,21 +361,21 @@ export function AdminPage() {
               style={{ objectPosition: `${content.heroImagePositionX}% ${content.heroImagePositionY}%` }}
             />
           ) : (
-            <div className="hero-photo-editor__empty">Загрузите фото для hero-блока</div>
+            <div className="hero-photo-editor__empty">Upload a photo for the hero section</div>
           )}
-          <div className="hero-photo-editor__hint">Перетащите фото мышкой, чтобы изменить центровку</div>
+          <div className="hero-photo-editor__hint">Drag the photo to adjust its center point</div>
         </div>
       </section>
 
       <section className="admin-section">
-        <h2>Музыка</h2>
+        <h2>Music</h2>
         <button className="ghost" onClick={addTrack} type="button">
-          Добавить трек
+          Add track
         </button>
         {content.tracks.map((track) => (
           <article className="item-row" key={track.id}>
             <label>
-              Название
+              Title
               <input value={track.title} onChange={(event) => updateTrack(track.id, "title", event.target.value)} />
             </label>
             <label>
@@ -373,16 +386,16 @@ export function AdminPage() {
               />
             </label>
             <button type="button" className="danger" onClick={() => removeTrack(track.id)}>
-              Удалить
+              Delete
             </button>
           </article>
         ))}
       </section>
 
       <section className="admin-section">
-        <h2>Галерея</h2>
+        <h2>Gallery</h2>
         <label className="upload-box">
-          Загрузить фото
+          Upload photo
           <input
             type="file"
             accept="image/*"
@@ -410,7 +423,7 @@ export function AdminPage() {
                 }}
               />
               <button type="button" className="danger" onClick={() => removeImage(image.id)}>
-                Удалить
+                Delete
               </button>
             </article>
           ))}
@@ -418,17 +431,17 @@ export function AdminPage() {
       </section>
 
       <section className="admin-section">
-        <h2>Контакты</h2>
+        <h2>Contacts</h2>
         <label>
           Email
           <input value={content.contacts.email} onChange={(event) => updateContact("email", event.target.value)} />
         </label>
         <label>
-          Телефон
+          Phone
           <input value={content.contacts.phone} onChange={(event) => updateContact("phone", event.target.value)} />
         </label>
         <label>
-          Копирайт
+          Copyright
           <input
             value={content.contacts.copyright}
             onChange={(event) => updateContact("copyright", event.target.value)}
@@ -438,7 +451,7 @@ export function AdminPage() {
 
       <div className="admin-actions">
         <button className="save-btn" onClick={() => void save()} disabled={isSaving} type="button">
-          {isSaving ? "Сохраняем..." : "Сохранить"}
+          {isSaving ? "Saving..." : "Save"}
         </button>
         <span>{status}</span>
       </div>

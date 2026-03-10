@@ -10,7 +10,7 @@ function App() {
     <>
       {isAdminRoute && (
         <div className="topbar shell">
-          <Link to="/">На главную</Link>
+          <Link to="/">Back to landing</Link>
         </div>
       )}
       <Routes>

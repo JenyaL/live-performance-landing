@@ -44,17 +44,18 @@ export function LandingPage() {
       <main className="shell landing-page">
         <section id="hero" className="landing-block landing-hero">
           <div className="landing-hero__layout">
-            <h1 className="landing-hero__title">{content?.heroTitle ?? "Живой звук. Энергия сцены."}</h1>
+            <h1 className="landing-hero__title">{content?.heroTitle ?? "Live sound. Stage energy."}</h1>
 
             <div className="landing-hero__content">
+              <p className="landing-hero__artist">{content?.artistName ?? "Live Performance"}</p>
               <p className="landing-hero__subtitle">{content?.heroSubtitle ?? ""}</p>
 
               <div className="landing-hero__actions">
-                <a href="#music">Слушать треки</a>
+                <a href="#music">Listen to tracks</a>
               </div>
             </div>
 
-            <aside className="landing-hero__photo-slot" aria-label="Фото в hero-блоке">
+            <aside className="landing-hero__photo-slot" aria-label="Photo in hero section">
               {content?.heroImageUrl ? (
                 <img
                   src={content.heroImageUrl}
@@ -63,7 +64,7 @@ export function LandingPage() {
                   style={{ objectPosition: `${content.heroImagePositionX}% ${content.heroImagePositionY}%` }}
                 />
               ) : (
-                <div className="landing-hero__photo-placeholder">Здесь будет фото из админки</div>
+                <div className="landing-hero__photo-placeholder">Hero photo will appear here from admin</div>
               )}
             </aside>
           </div>

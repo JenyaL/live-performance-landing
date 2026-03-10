@@ -1,10 +1,17 @@
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { collection, doc, getDoc, serverTimestamp, setDoc, writeBatch } from "firebase/firestore";
 import { db } from "./firebase";
 import { defaultLandingContent, type LandingContent } from "../types/content";
 
 const CONTENT_COLLECTION = "landing";
 const CONTENT_DOC_ID = "main";
+const ADMIN_USERS_COLLECTION = "admin_users";
+const ADMIN_LOGS_COLLECTION = "admin_logs";
 const FIRESTORE_TIMEOUT_MS = 4000;
+
+type SaveActor = {
+  uid: string;
+  email: string;
+};
 
 function mergeLandingContent(rawData: unknown): LandingContent {
   const raw = (rawData ?? {}) as Partial<LandingContent>;
@@ -53,11 +60,45 @@ export async function getLandingContent(): Promise<LandingContent> {
   }
 }
 
-export async function saveLandingContent(content: LandingContent): Promise<void> {
+export async function isAdminUser(uid: string): Promise<boolean> {
+  if (!db || !uid) return false;
+
+  const adminRef = doc(db, ADMIN_USERS_COLLECTION, uid);
+  try {
+    const snapshot = await withTimeout(getDoc(adminRef), FIRESTORE_TIMEOUT_MS);
+    return snapshot.exists();
+  } catch {
+    return false;
+  }
+}
+
+export async function saveLandingContent(content: LandingContent, actor: SaveActor): Promise<void> {
   if (!db) {
     throw new Error("Firebase is not configured");
   }
 
   const contentRef = doc(db, CONTENT_COLLECTION, CONTENT_DOC_ID);
-  await withTimeout(setDoc(contentRef, content), FIRESTORE_TIMEOUT_MS);
+  const logsRef = collection(db, ADMIN_LOGS_COLLECTION);
+
+  const auditPayload = {
+    actorUid: actor.uid,
+    actorEmail: actor.email || "unknown",
+    action: "save_landing_content",
+    targetPath: `${CONTENT_COLLECTION}/${CONTENT_DOC_ID}`,
+    savedSummary: {
+      artistName: content.artistName,
+      heroTitle: content.heroTitle,
+      heroSubtitle: content.heroSubtitle,
+      tracksCount: content.tracks.length,
+      galleryCount: content.gallery.length,
+      contacts: content.contacts,
+    },
+    createdAt: serverTimestamp(),
+  };
+
+  const batch = writeBatch(db);
+  batch.set(contentRef, content);
+  batch.set(doc(logsRef), auditPayload);
+
+  await withTimeout(batch.commit(), FIRESTORE_TIMEOUT_MS);
 }
