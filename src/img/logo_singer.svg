@@ -1,0 +1,69 @@
+<svg viewBox="0 0 900 420" xmlns="http://www.w3.org/2000/svg">
+
+<defs>
+
+<!-- gold -->
+<linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#fff3c4"></stop>
+<stop offset="50%" stop-color="#e2b94f"></stop>
+<stop offset="100%" stop-color="#9c7420"></stop>
+</linearGradient>
+
+<!-- red notes -->
+<linearGradient id="noteRed" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#ff5a5a"></stop>
+<stop offset="50%" stop-color="#b3122f"></stop>
+<stop offset="100%" stop-color="#5a0c1c"></stop>
+</linearGradient>
+
+</defs>
+
+<!-- stars -->
+<text x="230" y="110" font-size="18" fill="url(#gold)">✦</text>
+<text x="270" y="80" font-size="14" fill="url(#gold)">✧</text>
+<text x="320" y="120" font-size="12" fill="url(#gold)">✦</text>
+
+<text x="650" y="110" font-size="16" fill="url(#gold)">✦</text>
+<text x="690" y="90" font-size="12" fill="url(#gold)">✧</text>
+<text x="730" y="120" font-size="14" fill="url(#gold)">✦</text>
+
+<!-- name -->
+<text x="450" y="200" font-size="95" text-anchor="middle" font-family="Georgia, serif" fill="url(#gold)">
+Forogh Amiri
+</text>
+
+<!-- left ornament -->
+<path d="
+M300 260
+C320 240 350 240 370 260
+L410 260
+" stroke="url(#gold)" stroke-width="4" fill="none" stroke-linecap="round"></path>
+
+<!-- treble clef -->
+<text x="450" y="275" font-size="55" text-anchor="middle" font-family="serif" fill="url(#gold)">
+𝄞
+</text>
+
+<!-- right ornament -->
+<path d="
+M490 260
+L530 260
+C550 240 580 240 600 260
+" stroke="url(#gold)" stroke-width="4" fill="none" stroke-linecap="round"></path>
+
+<!-- notes flow left -->
+<text x="250" y="300" font-size="30" fill="url(#noteRed)">♪</text>
+<text x="285" y="315" font-size="40" fill="url(#noteRed)">♫</text>
+<text x="315" y="295" font-size="26" fill="url(#noteRed)">♪</text>
+
+<!-- notes flow right -->
+<text x="610" y="295" font-size="28" fill="url(#noteRed)">♪</text>
+<text x="645" y="315" font-size="42" fill="url(#noteRed)">♫</text>
+<text x="680" y="300" font-size="32" fill="url(#noteRed)">♪</text>
+
+<!-- subtitle -->
+<text x="450" y="340" font-size="26" text-anchor="middle" letter-spacing="6" font-family="serif" fill="url(#gold)">
+— SONGWRITER &amp; SINGER —
+</text>
+
+</svg>

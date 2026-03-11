@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import { getLandingContent } from "../lib/content";
-import logoImage from "../img/2026-03-05 20.30.18.jpg";
+import logoImage from "../img/logo_singer.svg";
 import type { LandingContent } from "../types/content";
 
 export function LandingPage() {
@@ -31,7 +31,9 @@ export function LandingPage() {
   return (
     <div className="site-bg" style={logoBlendStyle}>
       <div className="bg" aria-hidden="true">
-        <div className="bg__nebula" />
+        <div className="bg__nebula">
+          <div className="star-flare-layer" />
+        </div>
         <div className="bg__logo-merge" />
         <div className="bg__vignette" />
         <div className="bg__frame" />
