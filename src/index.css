@@ -64,7 +64,8 @@ a {
   min-height: 100vh;
   --logo-origin-x: 120px;
   --logo-origin-y: 94px;
-  --logo-size: clamp(92px, 10vw, 136px);
+  --logo-size: clamp(260px, 34vw, 420px);
+  --logo-header-height: clamp(120px, 15vw, 190px);
 }
 
 .landing-header-strip {
@@ -72,14 +73,13 @@ a {
   top: 0;
   left: 0;
   right: 0;
-  height: calc(var(--logo-size) + env(safe-area-inset-top));
+  height: calc(var(--logo-header-height) + env(safe-area-inset-top));
   z-index: 9;
   background: transparent;
   display: flex;
   align-items: flex-start;
-  justify-content: flex-start;
+  justify-content: center;
   padding-top: env(safe-area-inset-top);
-  padding-left: env(safe-area-inset-left);
   overflow: hidden;
 }
 
@@ -89,12 +89,15 @@ a {
 
 .landing-logo-visible {
   width: var(--logo-size);
+  max-width: 92vw;
   height: auto;
   display: block;
   object-fit: contain;
-  filter: saturate(0.98) contrast(0.98) brightness(0.95);
+  filter: saturate(1.02) contrast(1.02) brightness(1.02);
   position: relative;
   z-index: 1;
+  transform-origin: center top;
+  animation: logo-twinkle 3.8s ease-in-out infinite;
 }
 
 .landing-logo {
@@ -444,7 +447,8 @@ a {
 
 @media (max-width: 760px) {
   .site-bg {
-    --logo-size: clamp(78px, 21vw, 108px);
+    --logo-size: clamp(210px, 62vw, 320px);
+    --logo-header-height: clamp(104px, 30vw, 156px);
   }
 
   .landing-logo-visible {
@@ -588,13 +592,13 @@ a {
     radial-gradient(1100px 720px at 14% 12%, rgba(0, 0, 0, 0.62), transparent 82%),
     var(--logo-image);
   background-repeat: no-repeat;
-  background-size: auto, 520px auto;
-  background-position: 0 0, 1% 1%;
+  background-size: auto, 760px auto;
+  background-position: 0 0, 50% 1%;
   opacity: 0.08;
   filter: blur(20px) grayscale(0.55) saturate(0.35) brightness(0.62) contrast(0.82);
   mix-blend-mode: overlay;
-  -webkit-mask-image: radial-gradient(120% 100% at 18% 10%, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.42) 52%, transparent 84%);
-  mask-image: radial-gradient(120% 100% at 18% 10%, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.42) 52%, transparent 84%);
+  -webkit-mask-image: radial-gradient(120% 100% at 50% 10%, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.42) 52%, transparent 84%);
+  mask-image: radial-gradient(120% 100% at 50% 10%, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.42) 52%, transparent 84%);
 }
 
 .bg__nebula {
@@ -608,9 +612,101 @@ a {
     radial-gradient(circle at 22% 78%, rgba(255, 165, 90, 0.56) 0 1px, transparent 2px),
     radial-gradient(circle at 68% 64%, rgba(255, 220, 170, 0.52) 0 1px, transparent 2px);
   background-size: 280px 260px, 360px 320px, 310px 300px, 420px 360px;
-  opacity: 0.24;
+  opacity: 0.2;
   mix-blend-mode: screen;
   animation: stars-drift 36s linear infinite, stars-twinkle-soft 6.4s ease-in-out infinite;
+}
+
+.bg__nebula::before,
+.bg__nebula::after {
+  content: "";
+  position: absolute;
+  inset: -6%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.bg__nebula .star-flare-layer {
+  position: absolute;
+  inset: -6%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 247, 215, 1) 0 1.6px, transparent 3px),
+    radial-gradient(circle at 24% 34%, rgba(255, 238, 198, 1) 0 1.4px, transparent 2.8px),
+    radial-gradient(circle at 37% 14%, rgba(255, 244, 210, 1) 0 1.5px, transparent 2.9px),
+    radial-gradient(circle at 51% 28%, rgba(255, 236, 196, 1) 0 1.4px, transparent 2.8px),
+    radial-gradient(circle at 66% 16%, rgba(255, 245, 212, 1) 0 1.6px, transparent 3px),
+    radial-gradient(circle at 78% 31%, rgba(255, 235, 192, 1) 0 1.4px, transparent 2.8px),
+    radial-gradient(circle at 91% 19%, rgba(255, 246, 214, 1) 0 1.5px, transparent 2.9px),
+    radial-gradient(circle at 17% 62%, rgba(255, 239, 200, 1) 0 1.5px, transparent 2.9px),
+    radial-gradient(circle at 32% 52%, rgba(255, 247, 215, 1) 0 1.6px, transparent 3px),
+    radial-gradient(circle at 48% 68%, rgba(255, 238, 198, 1) 0 1.4px, transparent 2.8px),
+    radial-gradient(circle at 62% 58%, rgba(255, 245, 212, 1) 0 1.5px, transparent 2.9px),
+    radial-gradient(circle at 76% 72%, rgba(255, 236, 196, 1) 0 1.4px, transparent 2.8px),
+    radial-gradient(circle at 89% 61%, rgba(255, 247, 215, 1) 0 1.6px, transparent 3px),
+    radial-gradient(circle at 11% 86%, rgba(255, 244, 210, 1) 0 1.5px, transparent 2.9px),
+    radial-gradient(circle at 27% 77%, rgba(255, 235, 192, 1) 0 1.4px, transparent 2.8px),
+    radial-gradient(circle at 43% 90%, rgba(255, 246, 214, 1) 0 1.5px, transparent 2.9px),
+    radial-gradient(circle at 58% 82%, rgba(255, 239, 200, 1) 0 1.5px, transparent 2.9px),
+    radial-gradient(circle at 73% 88%, rgba(255, 247, 215, 1) 0 1.6px, transparent 3px),
+    radial-gradient(circle at 87% 79%, rgba(255, 238, 198, 1) 0 1.4px, transparent 2.8px);
+  opacity: 0.08;
+  filter: blur(0.1px);
+  animation:
+    star-flash-a 2.4s steps(2, end) infinite,
+    star-flash-b 3.1s steps(3, end) infinite,
+    star-flash-c 4.7s steps(2, end) infinite;
+}
+
+.bg__nebula::before {
+  background:
+    radial-gradient(circle at 5% 12%, rgba(255, 239, 200, 0.95) 0 1px, transparent 2px),
+    radial-gradient(circle at 15% 28%, rgba(255, 222, 150, 0.86) 0 1px, transparent 2px),
+    radial-gradient(circle at 26% 8%, rgba(255, 187, 120, 0.9) 0 1px, transparent 2px),
+    radial-gradient(circle at 33% 24%, rgba(255, 239, 200, 0.96) 0 1px, transparent 2px),
+    radial-gradient(circle at 46% 14%, rgba(255, 200, 130, 0.92) 0 1px, transparent 2px),
+    radial-gradient(circle at 59% 26%, rgba(255, 239, 200, 0.94) 0 1px, transparent 2px),
+    radial-gradient(circle at 66% 10%, rgba(255, 192, 124, 0.9) 0 1px, transparent 2px),
+    radial-gradient(circle at 74% 21%, rgba(255, 239, 200, 0.94) 0 1px, transparent 2px),
+    radial-gradient(circle at 86% 9%, rgba(255, 210, 145, 0.9) 0 1px, transparent 2px),
+    radial-gradient(circle at 92% 29%, rgba(255, 239, 200, 0.95) 0 1px, transparent 2px),
+    radial-gradient(circle at 11% 52%, rgba(255, 198, 130, 0.9) 0 1px, transparent 2px),
+    radial-gradient(circle at 24% 41%, rgba(255, 239, 200, 0.95) 0 1px, transparent 2px),
+    radial-gradient(circle at 39% 58%, rgba(255, 214, 140, 0.88) 0 1px, transparent 2px),
+    radial-gradient(circle at 54% 44%, rgba(255, 239, 200, 0.95) 0 1px, transparent 2px),
+    radial-gradient(circle at 71% 56%, rgba(255, 198, 130, 0.88) 0 1px, transparent 2px),
+    radial-gradient(circle at 83% 46%, rgba(255, 239, 200, 0.94) 0 1px, transparent 2px),
+    radial-gradient(circle at 95% 58%, rgba(255, 212, 145, 0.9) 0 1px, transparent 2px),
+    radial-gradient(circle at 7% 82%, rgba(255, 239, 200, 0.94) 0 1px, transparent 2px),
+    radial-gradient(circle at 22% 74%, rgba(255, 198, 130, 0.88) 0 1px, transparent 2px),
+    radial-gradient(circle at 35% 90%, rgba(255, 239, 200, 0.96) 0 1px, transparent 2px),
+    radial-gradient(circle at 51% 80%, rgba(255, 204, 136, 0.9) 0 1px, transparent 2px),
+    radial-gradient(circle at 67% 86%, rgba(255, 239, 200, 0.95) 0 1px, transparent 2px),
+    radial-gradient(circle at 79% 74%, rgba(255, 193, 124, 0.88) 0 1px, transparent 2px),
+    radial-gradient(circle at 91% 88%, rgba(255, 239, 200, 0.95) 0 1px, transparent 2px);
+  opacity: 0.36;
+  animation: starfield-chaos-a 9.2s steps(11, end) infinite, stars-drift 44s linear infinite;
+}
+
+.bg__nebula::after {
+  background:
+    radial-gradient(circle at 8% 18%, rgba(255, 239, 200, 0.92) 0 1.4px, transparent 2.6px),
+    radial-gradient(circle at 18% 36%, rgba(255, 183, 118, 0.82) 0 1.4px, transparent 2.6px),
+    radial-gradient(circle at 29% 12%, rgba(255, 239, 200, 0.93) 0 1.2px, transparent 2.4px),
+    radial-gradient(circle at 44% 30%, rgba(255, 210, 140, 0.84) 0 1.3px, transparent 2.5px),
+    radial-gradient(circle at 57% 16%, rgba(255, 239, 200, 0.93) 0 1.3px, transparent 2.5px),
+    radial-gradient(circle at 69% 32%, rgba(255, 188, 120, 0.82) 0 1.2px, transparent 2.4px),
+    radial-gradient(circle at 81% 14%, rgba(255, 239, 200, 0.94) 0 1.4px, transparent 2.6px),
+    radial-gradient(circle at 93% 34%, rgba(255, 204, 136, 0.82) 0 1.2px, transparent 2.4px),
+    radial-gradient(circle at 12% 66%, rgba(255, 239, 200, 0.92) 0 1.2px, transparent 2.4px),
+    radial-gradient(circle at 28% 52%, rgba(255, 188, 120, 0.8) 0 1.3px, transparent 2.5px),
+    radial-gradient(circle at 47% 70%, rgba(255, 239, 200, 0.94) 0 1.4px, transparent 2.6px),
+    radial-gradient(circle at 63% 58%, rgba(255, 198, 130, 0.82) 0 1.2px, transparent 2.4px),
+    radial-gradient(circle at 78% 72%, rgba(255, 239, 200, 0.92) 0 1.2px, transparent 2.4px),
+    radial-gradient(circle at 90% 60%, rgba(255, 182, 116, 0.8) 0 1.3px, transparent 2.5px);
+  opacity: 0.24;
+  animation: starfield-chaos-b 6.6s steps(9, end) infinite, stars-drift 56s linear infinite reverse;
 }
 
 .bg__vignette {
@@ -736,6 +832,140 @@ a {
   }
   50% {
     opacity: 0.34;
+  }
+}
+
+@keyframes logo-twinkle {
+  0%,
+  100% {
+    filter: saturate(1.03) contrast(1.02) brightness(1.02) drop-shadow(0 0 0 rgba(243, 214, 122, 0));
+    opacity: 0.96;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    filter: saturate(1.16) contrast(1.06) brightness(1.18) drop-shadow(0 0 16px rgba(243, 214, 122, 0.44));
+    opacity: 1;
+    transform: translateY(-1px) scale(1.014);
+  }
+}
+
+@keyframes starfield-chaos-a {
+  0% {
+    opacity: 0.18;
+    filter: brightness(0.82);
+  }
+  23% {
+    opacity: 0.44;
+    filter: brightness(1.04);
+  }
+  37% {
+    opacity: 0.24;
+    filter: brightness(0.9);
+  }
+  58% {
+    opacity: 0.5;
+    filter: brightness(1.14);
+  }
+  77% {
+    opacity: 0.28;
+    filter: brightness(0.92);
+  }
+  100% {
+    opacity: 0.4;
+    filter: brightness(1.02);
+  }
+}
+
+@keyframes starfield-chaos-b {
+  0% {
+    opacity: 0.12;
+    filter: brightness(0.78);
+  }
+  17% {
+    opacity: 0.32;
+    filter: brightness(0.98);
+  }
+  36% {
+    opacity: 0.16;
+    filter: brightness(0.84);
+  }
+  54% {
+    opacity: 0.42;
+    filter: brightness(1.08);
+  }
+  72% {
+    opacity: 0.18;
+    filter: brightness(0.86);
+  }
+  100% {
+    opacity: 0.3;
+    filter: brightness(0.96);
+  }
+}
+
+@keyframes star-flash-a {
+  0%,
+  100% {
+    opacity: 0.05;
+    filter: blur(0.1px) brightness(0.85);
+  }
+  36% {
+    opacity: 0.14;
+    filter: blur(0.1px) brightness(1.15);
+  }
+  40% {
+    opacity: 0.36;
+    filter: blur(0) brightness(1.45);
+  }
+  44% {
+    opacity: 0.09;
+    filter: blur(0.1px) brightness(0.95);
+  }
+}
+
+@keyframes star-flash-b {
+  0%,
+  100% {
+    opacity: 0.06;
+    transform: translate3d(0, 0, 0);
+  }
+  22% {
+    opacity: 0.1;
+  }
+  27% {
+    opacity: 0.33;
+    transform: translate3d(0.2%, -0.1%, 0);
+  }
+  31% {
+    opacity: 0.08;
+    transform: translate3d(0, 0, 0);
+  }
+  73% {
+    opacity: 0.29;
+    transform: translate3d(-0.15%, 0.1%, 0);
+  }
+  78% {
+    opacity: 0.07;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes star-flash-c {
+  0%,
+  100% {
+    opacity: 0.04;
+    filter: brightness(0.9);
+  }
+  48% {
+    opacity: 0.1;
+  }
+  53% {
+    opacity: 0.34;
+    filter: brightness(1.5);
+  }
+  58% {
+    opacity: 0.06;
+    filter: brightness(0.92);
   }
 }
 
