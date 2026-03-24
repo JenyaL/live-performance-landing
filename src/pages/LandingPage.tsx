@@ -1,9 +1,10 @@
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getLandingContent } from "../lib/content";
-import logoImage from "../img/logo_singer.svg";
 import { extractYoutubeVideoId } from "../lib/youtube";
 import type { LandingContent } from "../types/content";
+
+const LOGO_IMAGE_URL = "/logo_singer.svg";
 
 type PlayerState = "stopped" | "playing" | "paused";
 
@@ -25,7 +26,7 @@ const toTitleFromPath = (path: string): string => {
 
 export function LandingPage() {
   const logoBlendStyle = {
-    "--logo-image": `url(${logoImage})`,
+    "--logo-image": `url(${LOGO_IMAGE_URL})`,
   } as CSSProperties;
 
   const [content, setContent] = useState<LandingContent | null>(null);
@@ -35,10 +36,10 @@ export function LandingPage() {
   const [embedNonce, setEmbedNonce] = useState(0);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
   const [isActivePhotoExpanded, setIsActivePhotoExpanded] = useState(false);
+  const [gallerySlideDirection, setGallerySlideDirection] = useState<-1 | 1>(1);
+  const [galleryIntervalKey, setGalleryIntervalKey] = useState(0);
+  const [hasGalleryNavigated, setHasGalleryNavigated] = useState(false);
   const touchStartXRef = useRef<number | null>(null);
-  const [isFading, setIsFading] = useState(false);
-  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const activeIndexRef = useRef(0);
 
   useEffect(() => {
     const load = async () => {
@@ -105,33 +106,17 @@ export function LandingPage() {
   );
 
   useEffect(() => {
-    if (!tracks.length) {
-      setSelectedTrackId("");
-      setPlayerState("stopped");
-      return;
-    }
+    const titleArtist = (content?.artistName ?? "").trim();
+    const title = titleArtist ? `${titleArtist} | Music Showcase` : "Live Performance | Music Showcase";
+    document.title = title;
 
-    const selectedExists = tracks.some((track) => track.id === selectedTrackId);
-    if (!selectedExists) {
-      setSelectedTrackId(tracks[0].id);
-      setPlayerState("stopped");
+    const subtitle = (content?.heroSubtitle ?? "").trim();
+    const description = subtitle || "Live music showcase with tracks, gallery and contact details.";
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute("content", description);
     }
-  }, [selectedTrackId, tracks]);
-
-  useEffect(() => {
-    if (!galleryImages.length) {
-      setActiveGalleryIndex(0);
-      return;
-    }
-
-    if (activeGalleryIndex >= galleryImages.length) {
-      setActiveGalleryIndex(0);
-    }
-  }, [activeGalleryIndex, galleryImages]);
-
-  useEffect(() => {
-    activeIndexRef.current = activeGalleryIndex;
-  }, [activeGalleryIndex]);
+  }, [content?.artistName, content?.heroSubtitle]);
 
   useEffect(() => {
     if (galleryImages.length <= 1) {
@@ -139,29 +124,28 @@ export function LandingPage() {
     }
 
     const intervalId = window.setInterval(() => {
-      if (fadeTimerRef.current !== null) return;
-      const nextIndex = (activeIndexRef.current + 1) % galleryImages.length;
-      setIsFading(true);
-      fadeTimerRef.current = setTimeout(() => {
-        setActiveGalleryIndex(nextIndex);
-        setIsFading(false);
-        fadeTimerRef.current = null;
-      }, 280);
+      setHasGalleryNavigated(true);
+      setGallerySlideDirection(1);
+      setIsActivePhotoExpanded(false);
+      setActiveGalleryIndex((currentIndex) => (currentIndex + 1) % galleryImages.length);
     }, 7000);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [galleryImages.length]);
+  }, [galleryImages.length, galleryIntervalKey]);
 
   const activeTrack = tracks.find((track) => track.id === selectedTrackId) ?? tracks[0] ?? null;
+  const normalizedActiveGalleryIndex = galleryImages.length
+    ? ((activeGalleryIndex % galleryImages.length) + galleryImages.length) % galleryImages.length
+    : 0;
   const wrapGalleryIndex = (index: number) => {
     if (!galleryImages.length) return 0;
     return (index + galleryImages.length) % galleryImages.length;
   };
-  const activeGalleryImage = galleryImages[activeGalleryIndex] ?? null;
-  const previousGalleryImage = galleryImages[wrapGalleryIndex(activeGalleryIndex - 1)] ?? null;
-  const nextGalleryImage = galleryImages[wrapGalleryIndex(activeGalleryIndex + 1)] ?? null;
+  const activeGalleryImage = galleryImages[normalizedActiveGalleryIndex] ?? null;
+  const previousGalleryImage = galleryImages[wrapGalleryIndex(normalizedActiveGalleryIndex - 1)] ?? null;
+  const nextGalleryImage = galleryImages[wrapGalleryIndex(normalizedActiveGalleryIndex + 1)] ?? null;
 
   const sendPlayerCommand = (command: "playVideo" | "pauseVideo" | "stopVideo") => {
     const iframe = iframeRef.current;
@@ -216,20 +200,25 @@ export function LandingPage() {
     return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
   };
 
-  const goToIndex = (newIndex: number) => {
-    if (fadeTimerRef.current !== null) return;
+  const getDirectionToIndex = (targetIndex: number): -1 | 1 => {
+    if (!galleryImages.length) return 1;
+    const forwardDistance = (targetIndex - normalizedActiveGalleryIndex + galleryImages.length) % galleryImages.length;
+    const backwardDistance = (normalizedActiveGalleryIndex - targetIndex + galleryImages.length) % galleryImages.length;
+    return forwardDistance <= backwardDistance ? 1 : -1;
+  };
+
+  const goToIndex = (newIndex: number, direction: -1 | 1) => {
+    if (!galleryImages.length || newIndex === normalizedActiveGalleryIndex) return;
+    setHasGalleryNavigated(true);
+    setGallerySlideDirection(direction);
     setIsActivePhotoExpanded(false);
-    setIsFading(true);
-    fadeTimerRef.current = setTimeout(() => {
-      setActiveGalleryIndex(newIndex);
-      setIsFading(false);
-      fadeTimerRef.current = null;
-    }, 280);
+    setActiveGalleryIndex(newIndex);
+    setGalleryIntervalKey((k) => k + 1);
   };
 
   const stepGallery = (direction: -1 | 1) => {
     if (!galleryImages.length) return;
-    goToIndex(wrapGalleryIndex(activeGalleryIndex + direction));
+    goToIndex(wrapGalleryIndex(normalizedActiveGalleryIndex + direction), direction);
   };
 
   const handleGalleryTouchStart = (clientX: number) => {
@@ -260,15 +249,8 @@ export function LandingPage() {
         <div className="bg__ornaments" />
       </div>
 
-      <svg className="bg-filter" aria-hidden="true" focusable="false">
-        <filter id="grain">
-          <feTurbulence type="fractalNoise" baseFrequency="0.95" numOctaves="3" stitchTiles="stitch" />
-          <feColorMatrix type="saturate" values="0" />
-        </filter>
-      </svg>
-
       <header className="landing-header-strip">
-        <img className="landing-logo-visible" src={logoImage} alt="Logo" />
+        <img className="landing-logo-visible" src={LOGO_IMAGE_URL} alt="Logo" />
         <nav className="landing-nav" aria-label="Landing sections">
           <div className="landing-nav__links">
             {navLinks.map((item) => (
@@ -379,15 +361,12 @@ export function LandingPage() {
                 <span aria-hidden="true">‹</span>
               </button>
 
-              <div
-                className="photo-gallery__track"
-                style={{ opacity: isFading ? 0 : 1, transition: "opacity 280ms ease" }}
-              >
+              <div className="photo-gallery__track">
                 {galleryImages.length > 1 && previousGalleryImage ? (
                   <button
                     type="button"
                     className="photo-gallery__card photo-gallery__card--side"
-                    onClick={() => goToIndex(wrapGalleryIndex(activeGalleryIndex - 1))}
+                    onClick={() => goToIndex(wrapGalleryIndex(normalizedActiveGalleryIndex - 1), -1)}
                     aria-label={`Show ${previousGalleryImage.title || "previous photo"}`}
                   >
                     <img src={previousGalleryImage.imageUrl} alt={previousGalleryImage.title || "Gallery photo"} />
@@ -398,11 +377,11 @@ export function LandingPage() {
 
                 {activeGalleryImage ? (
                   <figure
-                    className={`photo-gallery__card photo-gallery__card--active ${isActivePhotoExpanded ? "is-expanded" : ""}`}
+                    key={activeGalleryImage.id}
+                    className={`photo-gallery__card photo-gallery__card--active ${isActivePhotoExpanded ? "is-expanded" : ""} ${hasGalleryNavigated ? (gallerySlideDirection === 1 ? "is-slide-next" : "is-slide-prev") : ""}`}
                     onClick={() => setIsActivePhotoExpanded((prev) => !prev)}
                   >
                     <img src={activeGalleryImage.imageUrl} alt={activeGalleryImage.title || "Gallery photo"} />
-
                   </figure>
                 ) : null}
 
@@ -410,7 +389,7 @@ export function LandingPage() {
                   <button
                     type="button"
                     className="photo-gallery__card photo-gallery__card--side"
-                    onClick={() => goToIndex(wrapGalleryIndex(activeGalleryIndex + 1))}
+                    onClick={() => goToIndex(wrapGalleryIndex(normalizedActiveGalleryIndex + 1), 1)}
                     aria-label={`Show ${nextGalleryImage.title || "next photo"}`}
                   >
                     <img src={nextGalleryImage.imageUrl} alt={nextGalleryImage.title || "Gallery photo"} />
@@ -432,14 +411,14 @@ export function LandingPage() {
               {galleryImages.length > 1 ? (
                 <div className="photo-gallery__dots" role="tablist" aria-label="Photo gallery pagination">
                   {galleryImages.map((image, index) => {
-                    const isActive = index === activeGalleryIndex;
+                    const isActive = index === normalizedActiveGalleryIndex;
 
                     return (
                       <button
                         key={image.id}
                         type="button"
                         className={`photo-gallery__dot ${isActive ? "is-active" : ""}`}
-                        onClick={() => goToIndex(index)}
+                        onClick={() => goToIndex(index, getDirectionToIndex(index))}
                         aria-label={`Show photo ${index + 1}`}
                         aria-selected={isActive}
                         role="tab"
@@ -455,8 +434,14 @@ export function LandingPage() {
         <section id="contacts" className="landing-block landing-contacts">
           <h2>Contacts</h2>
           <div className="landing-contact-list">
-            <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
-            <a href={phoneHref}>{contactPhone}</a>
+            <div className="landing-contact-row">
+              <span className="landing-contact-label">Phone</span>
+              <a href={phoneHref}>{contactPhone}</a>
+            </div>
+            <div className="landing-contact-row">
+              <span className="landing-contact-label">Email</span>
+              <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+            </div>
           </div>
         </section>
 
