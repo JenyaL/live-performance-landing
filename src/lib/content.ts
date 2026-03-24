@@ -25,7 +25,6 @@ function mergeLandingContent(rawData: unknown): LandingContent {
     },
     navItems: Array.isArray(raw.navItems) ? raw.navItems : defaultLandingContent.navItems,
     tracks: Array.isArray(raw.tracks) ? raw.tracks : defaultLandingContent.tracks,
-    gallery: Array.isArray(raw.gallery) ? raw.gallery : defaultLandingContent.gallery,
   };
 }
 
@@ -90,7 +89,6 @@ export async function saveLandingContent(content: LandingContent, actor: SaveAct
       heroTitle: content.heroTitle,
       heroSubtitle: content.heroSubtitle,
       tracksCount: content.tracks.length,
-      galleryCount: content.gallery.length,
       contacts: content.contacts,
     },
     createdAt: serverTimestamp(),

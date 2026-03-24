@@ -7,6 +7,22 @@ import type { LandingContent } from "../types/content";
 
 type PlayerState = "stopped" | "playing" | "paused";
 
+const heroImageModules = import.meta.glob("../img/hero-photo/*.{png,jpg,jpeg,webp,avif,svg}", {
+  eager: true,
+  import: "default",
+}) as Record<string, string>;
+
+const galleryImageModules = import.meta.glob("../img/gallery/*.{png,jpg,jpeg,webp,avif,svg}", {
+  eager: true,
+  import: "default",
+}) as Record<string, string>;
+
+const toTitleFromPath = (path: string): string => {
+  const fileName = path.split("/").pop() ?? "";
+  const withoutExt = fileName.replace(/\.[^/.]+$/, "");
+  return withoutExt.replace(/[-_]+/g, " ").trim();
+};
+
 export function LandingPage() {
   const logoBlendStyle = {
     "--logo-image": `url(${logoImage})`,
@@ -18,7 +34,11 @@ export function LandingPage() {
   const [playerState, setPlayerState] = useState<PlayerState>("stopped");
   const [embedNonce, setEmbedNonce] = useState(0);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
+  const [isActivePhotoExpanded, setIsActivePhotoExpanded] = useState(false);
   const touchStartXRef = useRef<number | null>(null);
+  const [isFading, setIsFading] = useState(false);
+  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeIndexRef = useRef(0);
 
   useEffect(() => {
     const load = async () => {
@@ -32,14 +52,16 @@ export function LandingPage() {
   const heroTitle = content?.heroTitle ?? "Live sound. Stage energy.";
   const artistName = content?.artistName ?? "Live Performance";
   const heroSubtitle = content?.heroSubtitle ?? "";
-  const heroImageUrl = content?.heroImageUrl ?? "";
   const contactEmail = content?.contacts.email ?? "artist@email.com";
   const contactPhone = content?.contacts.phone ?? "+1 (000) 000-00-00";
   const contactCopyright = content?.contacts.copyright ?? "";
   const phoneHref = `tel:${contactPhone.replace(/[^\d+]/g, "")}`;
-  const heroImagePosition = content
-    ? `${content.heroImagePositionX}% ${content.heroImagePositionY}%`
-    : "50% 50%";
+
+  const heroImages = useMemo(
+    () => Object.entries(heroImageModules).sort(([a], [b]) => a.localeCompare(b)).map(([, url]) => url),
+    [],
+  );
+  const heroImageUrl = heroImages[0] ?? "";
 
   const navLinks = useMemo(() => {
     const allowedHrefs = new Set(["#hero", "#music", "#gallery", "#contacts"]);
@@ -70,9 +92,17 @@ export function LandingPage() {
       .filter((track) => track.resolvedVideoId);
   }, [content?.tracks]);
 
-  const galleryImages = useMemo(() => {
-    return (content?.gallery ?? []).filter((image) => image.imageUrl);
-  }, [content?.gallery]);
+  const galleryImages = useMemo(
+    () =>
+      Object.entries(galleryImageModules)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([path, imageUrl]) => ({
+          id: path,
+          title: toTitleFromPath(path),
+          imageUrl,
+        })),
+    [],
+  );
 
   useEffect(() => {
     if (!tracks.length) {
@@ -100,13 +130,24 @@ export function LandingPage() {
   }, [activeGalleryIndex, galleryImages]);
 
   useEffect(() => {
+    activeIndexRef.current = activeGalleryIndex;
+  }, [activeGalleryIndex]);
+
+  useEffect(() => {
     if (galleryImages.length <= 1) {
       return;
     }
 
     const intervalId = window.setInterval(() => {
-      setActiveGalleryIndex((currentIndex) => (currentIndex + 1) % galleryImages.length);
-    }, 4500);
+      if (fadeTimerRef.current !== null) return;
+      const nextIndex = (activeIndexRef.current + 1) % galleryImages.length;
+      setIsFading(true);
+      fadeTimerRef.current = setTimeout(() => {
+        setActiveGalleryIndex(nextIndex);
+        setIsFading(false);
+        fadeTimerRef.current = null;
+      }, 280);
+    }, 7000);
 
     return () => {
       window.clearInterval(intervalId);
@@ -175,9 +216,20 @@ export function LandingPage() {
     return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
   };
 
+  const goToIndex = (newIndex: number) => {
+    if (fadeTimerRef.current !== null) return;
+    setIsActivePhotoExpanded(false);
+    setIsFading(true);
+    fadeTimerRef.current = setTimeout(() => {
+      setActiveGalleryIndex(newIndex);
+      setIsFading(false);
+      fadeTimerRef.current = null;
+    }, 280);
+  };
+
   const stepGallery = (direction: -1 | 1) => {
     if (!galleryImages.length) return;
-    setActiveGalleryIndex((currentIndex) => wrapGalleryIndex(currentIndex + direction));
+    goToIndex(wrapGalleryIndex(activeGalleryIndex + direction));
   };
 
   const handleGalleryTouchStart = (clientX: number) => {
@@ -244,9 +296,9 @@ export function LandingPage() {
 
             <aside className="landing-hero__photo-slot" aria-label="Photo in hero section">
               {heroImageUrl ? (
-                <img src={heroImageUrl} alt="Hero" className="landing-hero__photo" style={{ objectPosition: heroImagePosition }} />
+                <img src={heroImageUrl} alt="Hero" className="landing-hero__photo" />
               ) : (
-                <div className="landing-hero__photo-placeholder">Hero photo will appear here from admin</div>
+                <div className="landing-hero__photo-placeholder">Put a hero image into src/img/hero-photo</div>
               )}
             </aside>
           </div>
@@ -310,7 +362,7 @@ export function LandingPage() {
           <h2>Photo Gallery</h2>
 
           {!galleryImages.length ? (
-            <p className="landing-empty">Photos will appear here after you add them in admin panel.</p>
+            <p className="landing-empty">Add photos to src/img/gallery and they will appear here.</p>
           ) : (
             <div
               className="photo-gallery__carousel"
@@ -327,12 +379,15 @@ export function LandingPage() {
                 <span aria-hidden="true">‹</span>
               </button>
 
-              <div className="photo-gallery__track">
+              <div
+                className="photo-gallery__track"
+                style={{ opacity: isFading ? 0 : 1, transition: "opacity 280ms ease" }}
+              >
                 {galleryImages.length > 1 && previousGalleryImage ? (
                   <button
                     type="button"
                     className="photo-gallery__card photo-gallery__card--side"
-                    onClick={() => setActiveGalleryIndex(wrapGalleryIndex(activeGalleryIndex - 1))}
+                    onClick={() => goToIndex(wrapGalleryIndex(activeGalleryIndex - 1))}
                     aria-label={`Show ${previousGalleryImage.title || "previous photo"}`}
                   >
                     <img src={previousGalleryImage.imageUrl} alt={previousGalleryImage.title || "Gallery photo"} />
@@ -342,9 +397,12 @@ export function LandingPage() {
                 )}
 
                 {activeGalleryImage ? (
-                  <figure className="photo-gallery__card photo-gallery__card--active">
+                  <figure
+                    className={`photo-gallery__card photo-gallery__card--active ${isActivePhotoExpanded ? "is-expanded" : ""}`}
+                    onClick={() => setIsActivePhotoExpanded((prev) => !prev)}
+                  >
                     <img src={activeGalleryImage.imageUrl} alt={activeGalleryImage.title || "Gallery photo"} />
-                    {activeGalleryImage.title ? <figcaption>{activeGalleryImage.title}</figcaption> : null}
+
                   </figure>
                 ) : null}
 
@@ -352,7 +410,7 @@ export function LandingPage() {
                   <button
                     type="button"
                     className="photo-gallery__card photo-gallery__card--side"
-                    onClick={() => setActiveGalleryIndex(wrapGalleryIndex(activeGalleryIndex + 1))}
+                    onClick={() => goToIndex(wrapGalleryIndex(activeGalleryIndex + 1))}
                     aria-label={`Show ${nextGalleryImage.title || "next photo"}`}
                   >
                     <img src={nextGalleryImage.imageUrl} alt={nextGalleryImage.title || "Gallery photo"} />
@@ -381,7 +439,7 @@ export function LandingPage() {
                         key={image.id}
                         type="button"
                         className={`photo-gallery__dot ${isActive ? "is-active" : ""}`}
-                        onClick={() => setActiveGalleryIndex(index)}
+                        onClick={() => goToIndex(index)}
                         aria-label={`Show photo ${index + 1}`}
                         aria-selected={isActive}
                         role="tab"
