@@ -17,6 +17,8 @@ export function LandingPage() {
   const [selectedTrackId, setSelectedTrackId] = useState<string>("");
   const [playerState, setPlayerState] = useState<PlayerState>("stopped");
   const [embedNonce, setEmbedNonce] = useState(0);
+  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
+  const touchStartXRef = useRef<number | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -40,10 +42,11 @@ export function LandingPage() {
     : "50% 50%";
 
   const navLinks = useMemo(() => {
-    const allowedHrefs = new Set(["#hero", "#music", "#contacts"]);
+    const allowedHrefs = new Set(["#hero", "#music", "#gallery", "#contacts"]);
     const source = content?.navItems ?? [
       { id: "hero", label: "Home", href: "#hero" },
       { id: "music", label: "Music", href: "#music" },
+      { id: "gallery", label: "Gallery", href: "#gallery" },
       { id: "contacts", label: "Contacts", href: "#contacts" },
     ];
 
@@ -53,6 +56,7 @@ export function LandingPage() {
       : [
           { id: "hero", label: "Home", href: "#hero" },
           { id: "music", label: "Music", href: "#music" },
+          { id: "gallery", label: "Gallery", href: "#gallery" },
           { id: "contacts", label: "Contacts", href: "#contacts" },
         ];
   }, [content?.navItems]);
@@ -65,6 +69,10 @@ export function LandingPage() {
       }))
       .filter((track) => track.resolvedVideoId);
   }, [content?.tracks]);
+
+  const galleryImages = useMemo(() => {
+    return (content?.gallery ?? []).filter((image) => image.imageUrl);
+  }, [content?.gallery]);
 
   useEffect(() => {
     if (!tracks.length) {
@@ -80,7 +88,39 @@ export function LandingPage() {
     }
   }, [selectedTrackId, tracks]);
 
+  useEffect(() => {
+    if (!galleryImages.length) {
+      setActiveGalleryIndex(0);
+      return;
+    }
+
+    if (activeGalleryIndex >= galleryImages.length) {
+      setActiveGalleryIndex(0);
+    }
+  }, [activeGalleryIndex, galleryImages]);
+
+  useEffect(() => {
+    if (galleryImages.length <= 1) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setActiveGalleryIndex((currentIndex) => (currentIndex + 1) % galleryImages.length);
+    }, 4500);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [galleryImages.length]);
+
   const activeTrack = tracks.find((track) => track.id === selectedTrackId) ?? tracks[0] ?? null;
+  const wrapGalleryIndex = (index: number) => {
+    if (!galleryImages.length) return 0;
+    return (index + galleryImages.length) % galleryImages.length;
+  };
+  const activeGalleryImage = galleryImages[activeGalleryIndex] ?? null;
+  const previousGalleryImage = galleryImages[wrapGalleryIndex(activeGalleryIndex - 1)] ?? null;
+  const nextGalleryImage = galleryImages[wrapGalleryIndex(activeGalleryIndex + 1)] ?? null;
 
   const sendPlayerCommand = (command: "playVideo" | "pauseVideo" | "stopVideo") => {
     const iframe = iframeRef.current;
@@ -133,6 +173,27 @@ export function LandingPage() {
     });
 
     return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
+  };
+
+  const stepGallery = (direction: -1 | 1) => {
+    if (!galleryImages.length) return;
+    setActiveGalleryIndex((currentIndex) => wrapGalleryIndex(currentIndex + direction));
+  };
+
+  const handleGalleryTouchStart = (clientX: number) => {
+    touchStartXRef.current = clientX;
+  };
+
+  const handleGalleryTouchEnd = (clientX: number) => {
+    const startX = touchStartXRef.current;
+    touchStartXRef.current = null;
+
+    if (startX === null) return;
+
+    const deltaX = clientX - startX;
+    if (Math.abs(deltaX) < 40) return;
+
+    stepGallery(deltaX < 0 ? 1 : -1);
   };
 
   return (
@@ -241,6 +302,94 @@ export function LandingPage() {
                   );
                 })}
               </div>
+            </div>
+          )}
+        </section>
+
+        <section id="gallery" className="landing-block photo-gallery">
+          <h2>Photo Gallery</h2>
+
+          {!galleryImages.length ? (
+            <p className="landing-empty">Photos will appear here after you add them in admin panel.</p>
+          ) : (
+            <div
+              className="photo-gallery__carousel"
+              aria-label="Photo gallery slider"
+              onTouchStart={(event) => handleGalleryTouchStart(event.touches[0]?.clientX ?? 0)}
+              onTouchEnd={(event) => handleGalleryTouchEnd(event.changedTouches[0]?.clientX ?? 0)}
+            >
+              <button
+                type="button"
+                className="photo-gallery__arrow photo-gallery__arrow--prev"
+                onClick={() => stepGallery(-1)}
+                aria-label="Show previous photo"
+              >
+                <span aria-hidden="true">‹</span>
+              </button>
+
+              <div className="photo-gallery__track">
+                {galleryImages.length > 1 && previousGalleryImage ? (
+                  <button
+                    type="button"
+                    className="photo-gallery__card photo-gallery__card--side"
+                    onClick={() => setActiveGalleryIndex(wrapGalleryIndex(activeGalleryIndex - 1))}
+                    aria-label={`Show ${previousGalleryImage.title || "previous photo"}`}
+                  >
+                    <img src={previousGalleryImage.imageUrl} alt={previousGalleryImage.title || "Gallery photo"} />
+                  </button>
+                ) : (
+                  <div className="photo-gallery__spacer" aria-hidden="true" />
+                )}
+
+                {activeGalleryImage ? (
+                  <figure className="photo-gallery__card photo-gallery__card--active">
+                    <img src={activeGalleryImage.imageUrl} alt={activeGalleryImage.title || "Gallery photo"} />
+                    {activeGalleryImage.title ? <figcaption>{activeGalleryImage.title}</figcaption> : null}
+                  </figure>
+                ) : null}
+
+                {galleryImages.length > 1 && nextGalleryImage ? (
+                  <button
+                    type="button"
+                    className="photo-gallery__card photo-gallery__card--side"
+                    onClick={() => setActiveGalleryIndex(wrapGalleryIndex(activeGalleryIndex + 1))}
+                    aria-label={`Show ${nextGalleryImage.title || "next photo"}`}
+                  >
+                    <img src={nextGalleryImage.imageUrl} alt={nextGalleryImage.title || "Gallery photo"} />
+                  </button>
+                ) : (
+                  <div className="photo-gallery__spacer" aria-hidden="true" />
+                )}
+              </div>
+
+              <button
+                type="button"
+                className="photo-gallery__arrow photo-gallery__arrow--next"
+                onClick={() => stepGallery(1)}
+                aria-label="Show next photo"
+              >
+                <span aria-hidden="true">›</span>
+              </button>
+
+              {galleryImages.length > 1 ? (
+                <div className="photo-gallery__dots" role="tablist" aria-label="Photo gallery pagination">
+                  {galleryImages.map((image, index) => {
+                    const isActive = index === activeGalleryIndex;
+
+                    return (
+                      <button
+                        key={image.id}
+                        type="button"
+                        className={`photo-gallery__dot ${isActive ? "is-active" : ""}`}
+                        onClick={() => setActiveGalleryIndex(index)}
+                        aria-label={`Show photo ${index + 1}`}
+                        aria-selected={isActive}
+                        role="tab"
+                      />
+                    );
+                  })}
+                </div>
+              ) : null}
             </div>
           )}
         </section>
