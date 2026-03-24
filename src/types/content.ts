@@ -11,12 +11,6 @@ export type MusicTrack = {
   videoId: string;
 };
 
-export type GalleryImage = {
-  id: string;
-  title: string;
-  imageUrl: string;
-};
-
 export type ContactData = {
   email: string;
   phone: string;
@@ -27,12 +21,8 @@ export type LandingContent = {
   artistName: string;
   heroTitle: string;
   heroSubtitle: string;
-  heroImageUrl: string;
-  heroImagePositionX: number;
-  heroImagePositionY: number;
   navItems: NavItem[];
   tracks: MusicTrack[];
-  gallery: GalleryImage[];
   contacts: ContactData;
 };
 
@@ -41,9 +31,6 @@ export const defaultLandingContent: LandingContent = {
   heroTitle: "Live sound. Stage energy.",
   heroSubtitle:
     "Musician for festivals, private events, and club shows. Listen to tracks, browse photos, and book a live performance.",
-  heroImageUrl: "",
-  heroImagePositionX: 50,
-  heroImagePositionY: 50,
   navItems: [
     { id: crypto.randomUUID(), label: "Home", href: "#hero" },
     { id: crypto.randomUUID(), label: "Music", href: "#music" },
@@ -58,7 +45,6 @@ export const defaultLandingContent: LandingContent = {
       videoId: "dQw4w9WgXcQ",
     },
   ],
-  gallery: [],
   contacts: {
     email: "artist@email.com",
     phone: "+1 (000) 000-00-00",

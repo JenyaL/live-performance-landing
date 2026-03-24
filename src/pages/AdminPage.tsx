@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User } from "firebase/auth";
 import { getLandingContent, isAdminUser, saveLandingContent } from "../lib/content";
-import { uploadImageToCloudinary } from "../lib/cloudinary";
 import { auth, isFirebaseConfigured } from "../lib/firebase";
 import { extractYoutubeVideoId } from "../lib/youtube";
 import type { LandingContent } from "../types/content";
@@ -17,8 +16,6 @@ export function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [status, setStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [isDraggingHeroImage, setIsDraggingHeroImage] = useState(false);
-  const heroImageEditorRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!auth) {
@@ -89,46 +86,9 @@ export function AdminPage() {
     await signOut(auth);
   };
 
-  const updateHero = (
-    key: "artistName" | "heroTitle" | "heroSubtitle" | "heroImageUrl" | "heroImagePositionX" | "heroImagePositionY",
-    value: string | number,
-  ) => {
+  const updateHero = (key: "artistName" | "heroTitle" | "heroSubtitle", value: string) => {
     if (!content) return;
     setContent({ ...content, [key]: value });
-  };
-
-  const clampPercent = (value: number): number => Math.min(100, Math.max(0, value));
-
-  const updateHeroImagePositionByClient = (clientX: number, clientY: number) => {
-    if (!content || !heroImageEditorRef.current) return;
-
-    const rect = heroImageEditorRef.current.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) return;
-
-    const nextX = clampPercent(((clientX - rect.left) / rect.width) * 100);
-    const nextY = clampPercent(((clientY - rect.top) / rect.height) * 100);
-
-    setContent({
-      ...content,
-      heroImagePositionX: Number(nextX.toFixed(1)),
-      heroImagePositionY: Number(nextY.toFixed(1)),
-    });
-  };
-
-  const uploadHeroImage = async (file: File) => {
-    if (!content) return;
-
-    setStatus("Uploading hero photo to Cloudinary...");
-    try {
-      const imageUrl = await uploadImageToCloudinary(file);
-      setContent({
-        ...content,
-        heroImageUrl: imageUrl,
-      });
-      setStatus("Hero photo uploaded");
-    } catch {
-      setStatus("Failed to upload hero photo");
-    }
   };
 
   const updateContact = (key: "email" | "phone" | "copyright", value: string) => {
@@ -177,33 +137,6 @@ export function AdminPage() {
     setContent({ ...content, tracks: content.tracks.filter((item) => item.id !== id) });
   };
 
-  const removeImage = (id: string) => {
-    if (!content) return;
-    setContent({ ...content, gallery: content.gallery.filter((item) => item.id !== id) });
-  };
-
-  const uploadImage = async (file: File) => {
-    if (!content) return;
-
-    setStatus("Uploading photo to Cloudinary...");
-    try {
-      const imageUrl = await uploadImageToCloudinary(file);
-      setContent({
-        ...content,
-        gallery: [
-          ...content.gallery,
-          {
-            id: crypto.randomUUID(),
-            title: file.name,
-            imageUrl,
-          },
-        ],
-      });
-      setStatus("Photo uploaded");
-    } catch {
-      setStatus("Failed to upload photo");
-    }
-  };
 
   const save = async () => {
     if (!content || !currentUser) return;
@@ -297,74 +230,7 @@ export function AdminPage() {
           />
         </label>
 
-        <label className="upload-box">
-          Upload hero photo
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(event) => {
-              const selected = event.target.files?.[0];
-              if (selected) {
-                void uploadHeroImage(selected);
-              }
-            }}
-          />
-        </label>
-
-        <div className="hero-photo-admin-controls">
-          <label>
-            Position X: {content.heroImagePositionX.toFixed(1)}%
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={0.1}
-              value={content.heroImagePositionX}
-              onChange={(event) => updateHero("heroImagePositionX", Number(event.target.value))}
-            />
-          </label>
-
-          <label>
-            Position Y: {content.heroImagePositionY.toFixed(1)}%
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={0.1}
-              value={content.heroImagePositionY}
-              onChange={(event) => updateHero("heroImagePositionY", Number(event.target.value))}
-            />
-          </label>
-        </div>
-
-        <div
-          className="hero-photo-editor"
-          ref={heroImageEditorRef}
-          onPointerDown={(event) => {
-            if (!content.heroImageUrl) return;
-            event.currentTarget.setPointerCapture(event.pointerId);
-            setIsDraggingHeroImage(true);
-            updateHeroImagePositionByClient(event.clientX, event.clientY);
-          }}
-          onPointerMove={(event) => {
-            if (!isDraggingHeroImage) return;
-            updateHeroImagePositionByClient(event.clientX, event.clientY);
-          }}
-          onPointerUp={() => setIsDraggingHeroImage(false)}
-          onPointerCancel={() => setIsDraggingHeroImage(false)}
-        >
-          {content.heroImageUrl ? (
-            <img
-              src={content.heroImageUrl}
-              alt="Hero preview"
-              className="hero-photo-editor__image"
-              style={{ objectPosition: `${content.heroImagePositionX}% ${content.heroImagePositionY}%` }}
-            />
-          ) : (
-            <div className="hero-photo-editor__empty">Upload a photo for the hero section</div>
-          )}
-          <div className="hero-photo-editor__hint">Drag the photo to adjust its center point</div>
-        </div>
+        <p className="admin-note">Hero photo is loaded from local folder: src/img/hero-photo (first file by name).</p>
       </section>
 
       <section className="admin-section">
@@ -394,40 +260,7 @@ export function AdminPage() {
 
       <section className="admin-section">
         <h2>Gallery</h2>
-        <label className="upload-box">
-          Upload photo
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(event) => {
-              const selected = event.target.files?.[0];
-              if (selected) {
-                void uploadImage(selected);
-              }
-            }}
-          />
-        </label>
-        <div className="gallery-admin-list">
-          {content.gallery.map((image) => (
-            <article className="item-row" key={image.id}>
-              <img src={image.imageUrl} alt={image.title} />
-              <input
-                value={image.title}
-                onChange={(event) => {
-                  setContent({
-                    ...content,
-                    gallery: content.gallery.map((item) =>
-                      item.id === image.id ? { ...item, title: event.target.value } : item,
-                    ),
-                  });
-                }}
-              />
-              <button type="button" className="danger" onClick={() => removeImage(image.id)}>
-                Delete
-              </button>
-            </article>
-          ))}
-        </div>
+        <p className="admin-note">Gallery photos are loaded from local folder: src/img/gallery.</p>
       </section>
 
       <section className="admin-section">
