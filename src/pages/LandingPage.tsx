@@ -37,6 +37,8 @@ export function LandingPage() {
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
   const [isActivePhotoExpanded, setIsActivePhotoExpanded] = useState(false);
   const [gallerySlideDirection, setGallerySlideDirection] = useState<-1 | 1>(1);
+  const [galleryIntervalKey, setGalleryIntervalKey] = useState(0);
+  const [hasGalleryNavigated, setHasGalleryNavigated] = useState(false);
   const touchStartXRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -104,8 +106,8 @@ export function LandingPage() {
   );
 
   useEffect(() => {
-    const titleArtist = (content?.artistName ?? "Live Performance").trim();
-    const title = titleArtist ? `${titleArtist} | Live Performance` : "Live Performance";
+    const titleArtist = (content?.artistName ?? "").trim();
+    const title = titleArtist ? `${titleArtist} | Music Showcase` : "Live Performance | Music Showcase";
     document.title = title;
 
     const subtitle = (content?.heroSubtitle ?? "").trim();
@@ -122,6 +124,7 @@ export function LandingPage() {
     }
 
     const intervalId = window.setInterval(() => {
+      setHasGalleryNavigated(true);
       setGallerySlideDirection(1);
       setIsActivePhotoExpanded(false);
       setActiveGalleryIndex((currentIndex) => (currentIndex + 1) % galleryImages.length);
@@ -130,7 +133,7 @@ export function LandingPage() {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [galleryImages.length]);
+  }, [galleryImages.length, galleryIntervalKey]);
 
   const activeTrack = tracks.find((track) => track.id === selectedTrackId) ?? tracks[0] ?? null;
   const normalizedActiveGalleryIndex = galleryImages.length
@@ -206,9 +209,11 @@ export function LandingPage() {
 
   const goToIndex = (newIndex: number, direction: -1 | 1) => {
     if (!galleryImages.length || newIndex === normalizedActiveGalleryIndex) return;
+    setHasGalleryNavigated(true);
     setGallerySlideDirection(direction);
     setIsActivePhotoExpanded(false);
     setActiveGalleryIndex(newIndex);
+    setGalleryIntervalKey((k) => k + 1);
   };
 
   const stepGallery = (direction: -1 | 1) => {
@@ -373,7 +378,7 @@ export function LandingPage() {
                 {activeGalleryImage ? (
                   <figure
                     key={activeGalleryImage.id}
-                    className={`photo-gallery__card photo-gallery__card--active ${isActivePhotoExpanded ? "is-expanded" : ""} ${gallerySlideDirection === 1 ? "is-slide-next" : "is-slide-prev"}`}
+                    className={`photo-gallery__card photo-gallery__card--active ${isActivePhotoExpanded ? "is-expanded" : ""} ${hasGalleryNavigated ? (gallerySlideDirection === 1 ? "is-slide-next" : "is-slide-prev") : ""}`}
                     onClick={() => setIsActivePhotoExpanded((prev) => !prev)}
                   >
                     <img src={activeGalleryImage.imageUrl} alt={activeGalleryImage.title || "Gallery photo"} />
