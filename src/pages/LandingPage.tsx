@@ -24,6 +24,50 @@ const toTitleFromPath = (path: string): string => {
   return withoutExt.replace(/[-_]+/g, " ").trim();
 };
 
+type SocialPlatform = "facebook" | "instagram" | "tiktok";
+
+const toSafeExternalUrl = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const normalized = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+  try {
+    const parsed = new URL(normalized);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return "";
+    }
+
+    return parsed.toString();
+  } catch {
+    return "";
+  }
+};
+
+function SocialIcon({ platform }: { platform: SocialPlatform }) {
+  if (platform === "facebook") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M13.5 8.4V6.8c0-.6.4-1 1-1h1.7V3.1h-2.9c-2.1 0-3.4 1.4-3.4 3.5v1.8H7.9V11h2v9.9h3.6V11h2.4l.4-2.6h-2.8z" />
+      </svg>
+    );
+  }
+
+  if (platform === "instagram") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M7.5 2.8h9c2.6 0 4.7 2.1 4.7 4.7v9c0 2.6-2.1 4.7-4.7 4.7h-9c-2.6 0-4.7-2.1-4.7-4.7v-9c0-2.6 2.1-4.7 4.7-4.7zm0 2.4c-1.3 0-2.3 1-2.3 2.3v9c0 1.3 1 2.3 2.3 2.3h9c1.3 0 2.3-1 2.3-2.3v-9c0-1.3-1-2.3-2.3-2.3h-9zm10.1 1.8a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4zM12 8a4 4 0 110 8 4 4 0 010-8zm0 2.3a1.7 1.7 0 100 3.4 1.7 1.7 0 000-3.4z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path d="M9.5 3.2c.6.7 1.4 1.2 2.4 1.3v1.6a4.7 4.7 0 01-2.4-.7V9a3.4 3.4 0 11-3.4-3.4h.1v1.7h-.1a1.7 1.7 0 101.7 1.7V.7h1.7v2.5z" />
+    </svg>
+  );
+}
+
 export function LandingPage() {
   const logoBlendStyle = {
     "--logo-image": `url(${LOGO_IMAGE_URL})`,
@@ -55,8 +99,21 @@ export function LandingPage() {
   const heroSubtitle = content?.heroSubtitle ?? "";
   const contactEmail = content?.contacts.email ?? "artist@email.com";
   const contactPhone = content?.contacts.phone ?? "+1 (000) 000-00-00";
+  const contactFacebook = content?.contacts.facebook ?? "";
+  const contactInstagram = content?.contacts.instagram ?? "";
+  const contactTiktok = content?.contacts.tiktok ?? "";
   const contactCopyright = content?.contacts.copyright ?? "";
   const phoneHref = `tel:${contactPhone.replace(/[^\d+]/g, "")}`;
+
+  const socialLinks = useMemo(
+    () =>
+      [
+        { platform: "facebook" as const, label: "Facebook", url: toSafeExternalUrl(contactFacebook) },
+        { platform: "instagram" as const, label: "Instagram", url: toSafeExternalUrl(contactInstagram) },
+        { platform: "tiktok" as const, label: "TikTok", url: toSafeExternalUrl(contactTiktok) },
+      ].filter((item) => item.url),
+    [contactFacebook, contactInstagram, contactTiktok],
+  );
 
   const heroImages = useMemo(
     () => Object.entries(heroImageModules).sort(([a], [b]) => a.localeCompare(b)).map(([, url]) => url),
@@ -442,6 +499,26 @@ export function LandingPage() {
               <span className="landing-contact-label">Email</span>
               <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
             </div>
+            {socialLinks.length ? (
+              <div className="landing-contact-row">
+                <div className="landing-social-links" aria-label="Social links">
+                  {socialLinks.map((social) => (
+                    <a
+                      key={social.platform}
+                      href={social.url}
+                      className="landing-social-link"
+                      data-label={social.label}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      aria-label={social.label}
+                      title={social.label}
+                    >
+                      <SocialIcon platform={social.platform} />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         </section>
 

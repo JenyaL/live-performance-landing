@@ -14,6 +14,9 @@ export type MusicTrack = {
 export type ContactData = {
   email: string;
   phone: string;
+  facebook: string;
+  instagram: string;
+  tiktok: string;
   copyright: string;
 };
 
@@ -48,6 +51,9 @@ export const defaultLandingContent: LandingContent = {
   contacts: {
     email: "artist@email.com",
     phone: "+1 (000) 000-00-00",
+    facebook: "",
+    instagram: "",
+    tiktok: "",
     copyright: "© 2026 Live Performance. All rights reserved.",
   },
 };

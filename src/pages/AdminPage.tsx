@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User } from "firebase/auth";
 import { getLandingContent, isAdminUser, saveLandingContent } from "../lib/content";
 import { auth, isFirebaseConfigured } from "../lib/firebase";
@@ -14,8 +14,9 @@ export function AdminPage() {
   const [isAuthSubmitting, setIsAuthSubmitting] = useState(false);
   const [content, setContent] = useState<LandingContent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [status, setStatus] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const saveMessageTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!auth) {
@@ -63,6 +64,14 @@ export function AdminPage() {
     void load();
   }, [currentUser]);
 
+  useEffect(() => {
+    return () => {
+      if (saveMessageTimerRef.current !== null) {
+        window.clearTimeout(saveMessageTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleSignIn = async () => {
     if (!auth) {
       setAuthError("Firebase Auth is not configured.");
@@ -91,7 +100,7 @@ export function AdminPage() {
     setContent({ ...content, [key]: value });
   };
 
-  const updateContact = (key: "email" | "phone" | "copyright", value: string) => {
+  const updateContact = (key: "email" | "phone" | "facebook" | "instagram" | "tiktok" | "copyright", value: string) => {
     if (!content) return;
     setContent({ ...content, contacts: { ...content.contacts, [key]: value } });
   };
@@ -142,16 +151,25 @@ export function AdminPage() {
     if (!content || !currentUser) return;
 
     setIsSaving(true);
-    setStatus("Saving changes...");
+    setSaveMessage("");
 
     try {
       await saveLandingContent(content, {
         uid: currentUser.uid,
         email: currentUser.email ?? "",
       });
-      setStatus("Saved");
+
+      setSaveMessage("Content saved");
+      if (saveMessageTimerRef.current !== null) {
+        window.clearTimeout(saveMessageTimerRef.current);
+      }
+
+      saveMessageTimerRef.current = window.setTimeout(() => {
+        setSaveMessage("");
+        saveMessageTimerRef.current = null;
+      }, 10000);
     } catch {
-      setStatus("Failed to save");
+      setSaveMessage("Failed to save content");
     } finally {
       setIsSaving(false);
     }
@@ -274,6 +292,30 @@ export function AdminPage() {
           <input value={content.contacts.phone} onChange={(event) => updateContact("phone", event.target.value)} />
         </label>
         <label>
+          Facebook URL
+          <input
+            value={content.contacts.facebook}
+            onChange={(event) => updateContact("facebook", event.target.value)}
+            placeholder="https://facebook.com/your-page"
+          />
+        </label>
+        <label>
+          Instagram URL
+          <input
+            value={content.contacts.instagram}
+            onChange={(event) => updateContact("instagram", event.target.value)}
+            placeholder="https://instagram.com/your-profile"
+          />
+        </label>
+        <label>
+          TikTok URL
+          <input
+            value={content.contacts.tiktok}
+            onChange={(event) => updateContact("tiktok", event.target.value)}
+            placeholder="https://tiktok.com/@your-profile"
+          />
+        </label>
+        <label>
           Copyright
           <input
             value={content.contacts.copyright}
@@ -282,11 +324,12 @@ export function AdminPage() {
         </label>
       </section>
 
+      {saveMessage ? <p className="admin-note">{saveMessage}</p> : null}
+
       <div className="admin-actions">
         <button className="save-btn" onClick={() => void save()} disabled={isSaving} type="button">
           {isSaving ? "Saving..." : "Save"}
         </button>
-        <span>{status}</span>
       </div>
     </main>
   );
