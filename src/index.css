@@ -214,6 +214,11 @@ a {
   grid-area: content;
   min-width: 0;
   font-family: "Cormorant Garamond", serif;
+  transition: opacity 0.5s ease;
+}
+
+.landing-hero__content.is-content-loading {
+  opacity: 0;
 }
 
 .landing-hero__photo-slot {
