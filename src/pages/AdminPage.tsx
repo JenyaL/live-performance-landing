@@ -36,6 +36,19 @@ export function AdminPage() {
   }, []);
 
   useEffect(() => {
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
+    const prev = meta?.getAttribute("content") ?? null;
+    if (meta) {
+      meta.setAttribute("content", "noindex, nofollow");
+    }
+    return () => {
+      if (meta && prev !== null) {
+        meta.setAttribute("content", prev);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!currentUser) {
       setIsLoading(false);
       return;

@@ -74,6 +74,7 @@ export function LandingPage() {
   } as CSSProperties;
 
   const [content, setContent] = useState<LandingContent | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [selectedTrackId, setSelectedTrackId] = useState<string>("");
   const [playerState, setPlayerState] = useState<PlayerState>("stopped");
@@ -89,6 +90,7 @@ export function LandingPage() {
     const load = async () => {
       const nextContent = await getLandingContent();
       setContent(nextContent);
+      setIsLoading(false);
     };
 
     void load();
@@ -169,10 +171,16 @@ export function LandingPage() {
 
     const subtitle = (content?.heroSubtitle ?? "").trim();
     const description = subtitle || "Live music showcase with tracks, gallery and contact details.";
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute("content", description);
-    }
+
+    const setMeta = (selector: string, value: string) => {
+      document.querySelector(selector)?.setAttribute("content", value);
+    };
+
+    setMeta('meta[name="description"]', description);
+    setMeta('meta[property="og:title"]', title);
+    setMeta('meta[property="og:description"]', description);
+    setMeta('meta[name="twitter:title"]', title);
+    setMeta('meta[name="twitter:description"]', description);
   }, [content?.artistName, content?.heroSubtitle]);
 
   useEffect(() => {
@@ -324,7 +332,7 @@ export function LandingPage() {
           <div className="landing-hero__layout">
             <h1 className="landing-hero__title">{heroTitle}</h1>
 
-            <div className="landing-hero__content">
+            <div className={`landing-hero__content${isLoading ? " is-content-loading" : ""}`}>
               <p className="landing-hero__artist">{artistName}</p>
               <p className="landing-hero__subtitle">{heroSubtitle}</p>
 
@@ -335,7 +343,7 @@ export function LandingPage() {
 
             <aside className="landing-hero__photo-slot" aria-label="Photo in hero section">
               {heroImageUrl ? (
-                <img src={heroImageUrl} alt="Hero" className="landing-hero__photo" />
+                <img src={heroImageUrl} alt="Hero" className="landing-hero__photo" fetchPriority="high" />
               ) : (
                 <div className="landing-hero__photo-placeholder">Put a hero image into src/img/hero-photo</div>
               )}
@@ -426,7 +434,7 @@ export function LandingPage() {
                     onClick={() => goToIndex(wrapGalleryIndex(normalizedActiveGalleryIndex - 1), -1)}
                     aria-label={`Show ${previousGalleryImage.title || "previous photo"}`}
                   >
-                    <img src={previousGalleryImage.imageUrl} alt={previousGalleryImage.title || "Gallery photo"} />
+                    <img src={previousGalleryImage.imageUrl} alt={previousGalleryImage.title || "Gallery photo"} loading="lazy" />
                   </button>
                 ) : (
                   <div className="photo-gallery__spacer" aria-hidden="true" />
@@ -438,7 +446,7 @@ export function LandingPage() {
                     className={`photo-gallery__card photo-gallery__card--active ${isActivePhotoExpanded ? "is-expanded" : ""} ${hasGalleryNavigated ? (gallerySlideDirection === 1 ? "is-slide-next" : "is-slide-prev") : ""}`}
                     onClick={() => setIsActivePhotoExpanded((prev) => !prev)}
                   >
-                    <img src={activeGalleryImage.imageUrl} alt={activeGalleryImage.title || "Gallery photo"} />
+                    <img src={activeGalleryImage.imageUrl} alt={activeGalleryImage.title || "Gallery photo"} loading="lazy" />
                   </figure>
                 ) : null}
 
@@ -449,7 +457,7 @@ export function LandingPage() {
                     onClick={() => goToIndex(wrapGalleryIndex(normalizedActiveGalleryIndex + 1), 1)}
                     aria-label={`Show ${nextGalleryImage.title || "next photo"}`}
                   >
-                    <img src={nextGalleryImage.imageUrl} alt={nextGalleryImage.title || "Gallery photo"} />
+                    <img src={nextGalleryImage.imageUrl} alt={nextGalleryImage.title || "Gallery photo"} loading="lazy" />
                   </button>
                 ) : (
                   <div className="photo-gallery__spacer" aria-hidden="true" />
